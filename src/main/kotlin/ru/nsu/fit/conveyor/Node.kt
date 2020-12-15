@@ -1,14 +1,12 @@
 package ru.nsu.fit.conveyor
 
-data class Node(
-    var name: String = ""
+abstract class BaseNode(
+    val description: String
 ) {
     // FIXME нужна ли какая-то оченедь входных данных?
 
-    private var inputTypes: MutableMap<Int, Class<*>> = mutableMapOf()
-    private var outputTypes: MutableMap<Int, Class<*>> = mutableMapOf()
-
-    var body: (Map<Int, Any>) -> Map<Int, Any> = { mapOf() }
+    protected var inputTypes: MutableMap<Int, Class<*>> = mutableMapOf()
+    protected var outputTypes: MutableMap<Int, Class<*>> = mutableMapOf()
 
     fun addInput(id: Int, type: Class<*>) {
         inputTypes[id] = type
@@ -22,66 +20,84 @@ data class Node(
 
     fun getOutputType(id: Int): Class<*>? = outputTypes[id]
 
-    fun tryRun(inputs: Map<Int, Any>): Map<Int, Any> = body(inputs)
+    abstract fun run(inputs: Map<Int, Any>): Map<Int, Any>
+}
 
+class Node(
+    description: String = ""
+) : BaseNode(description) {
+    var body: (Map<Int, Any>) -> Map<Int, Any> = { mapOf() }
+
+    fun copy(): Node {
+        return Node(description).apply {
+            this@Node.inputTypes.forEach(this::addInput)
+            this@Node.outputTypes.forEach(this::addOutput)
+            this.body = this@Node.body
+        }
+    }
+
+    override fun run(inputs: Map<Int, Any>): Map<Int, Any> = body(inputs)
 }
 
 
 data class Connection(
-    val from: Node,
+    val from: BaseNode,
     val outputId: Int,
-    val to: Node,
+    val to: BaseNode,
     val inputId: Int
+
 )
 
-class Flow {
-    val nodes = mutableMapOf<String, Node>()
+class Flow(description: String) : BaseNode(description) {
+    private val nodes = mutableMapOf<String, Node>()
     private val connections: MutableList<Connection> = mutableListOf()
 
-    fun addNode(node: Node): Node? = nodes.put(node.name, node)
-
-    companion object {
-        fun builder(init: FlowBuilder.() -> Unit = {}): FlowBuilder {
-            //also let apply run
-            return FlowBuilder().apply(init)
-        }
-    }
-}
-
-class FlowBuilder {
-    private val flow = Flow()
-
-    // FIXME
-    // Такое поле уже есть во Flow. Сделать билдер иннером Flow? Получится тройная вложенность, что как-то ниоч
-
-
-    fun node(name: String, init: NodeConfiguration.() -> Unit = {}): Node {
-        return NodeConfiguration(Node(name), this).apply(init).build().also(flow::addNode)
+    fun addNode(name: String, node: Node): Node = node.copy().also {
+        nodes[name] = it
     }
 
-    fun node(name: String, node: Node, init: NodeConfiguration.() -> Unit = {}): Node {
-        val newNode = node.copy(name = name)
-        NodeConfiguration(newNode, this).apply(init).build()
-        return newNode
+    fun connect(from: String, outputId: Int, to: String, inputId: Int) {
+        val fromNode = nodes.getValue(from)
+        val toNode = nodes.getValue(to)
+        connect(fromNode, outputId, toNode, inputId)
     }
 
-    fun build(): Flow = flow
-
-    // FIXME maybe not inner?\
-    // FIXME нельзя настроить существующую ноду...
-    class NodeConfiguration(val node: Node, private val flowBuilder: FlowBuilder? = null) {
-        fun setInput(nodeName: String, outputId: Int, inputId: Int) {
-            flowBuilder
-                ?: error("FLowBuilder is null in $this. Cant set input outside of Flow.")
-            val outputNode = flowBuilder.nodes.find { it.name == nodeName } ?: error("")
-            assert(node.getInputType(inputId) == outputNode.getOutputType(outputId))
-
-            TODO()
+    private fun connect(fromNode: BaseNode, outputId: Int, toNode: BaseNode, inputId: Int) {
+        if (fromNode.getOutputType(outputId) != toNode.getInputType(inputId)) {
+            throw IllegalStateException("Different channels' types")
         }
 
+        val connection = Connection(fromNode, outputId, toNode, inputId)
+        if (connection in connections) {
+            throw IllegalStateException("Such connection already exists")
+        }
+        //FIXME надо кидать исключение или удалять старое и добавлять новое?
+        if (connections.find { it.from == fromNode && it.outputId == outputId } != null) {
+            throw IllegalStateException("nu tupoi")
+        }
+        connections.add(connection)
 
-        fun build(): Node = node
+    }
 
+    fun Node.input(flowInputId: Int, nodeInputId: Int) {
+        connect(this@Flow, flowInputId, this, nodeInputId)
+    }
+
+    fun Node.output(nodeOutputId: Int, flowOutputId: Int) {
+        connect(this, nodeOutputId, this@Flow, flowOutputId)
+    }
+
+
+    override fun run(inputs: Map<Int, Any>): Map<Int, Any> {
+        var currentInputs = inputs
+        var currentNode: BaseNode = this
+        while (true) {
+            val connection = connections.find { it.from == currentNode } ?: error("HAHAHA")
+            if (connection.to == this) break
+            currentInputs = connection.to.run(currentInputs)
+            currentNode = connection.to
+        }
+        return currentInputs
     }
 }
 
@@ -96,12 +112,16 @@ fun main() {
         }
     }
 
-    println(powNode.tryRun(mapOf(0 to 8)))
+    println(powNode.run(mapOf(0 to 8)))
 
-    val flow = Flow.builder {
-        node("pow1", powNode)
-        node("pow2", powNode) {
-            setInput("pow1", 0, 0)
-        }
-    }.build()
+    val flow = Flow("pow twice").apply {
+        addInput(0, Int::class.java)
+        addOutput(0, Int::class.java)
+
+        addNode("pow1", powNode).input(0, 0)
+        addNode("pow2", powNode).output(0, 0)
+        connect("pow1", 0, "pow2", 0)
+
+    }
+    println(flow.run(mapOf(0 to 10)))
 }
