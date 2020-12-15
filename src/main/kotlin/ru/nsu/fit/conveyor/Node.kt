@@ -79,12 +79,14 @@ class Flow(description: String) : BaseNode(description) {
 
     }
 
-    fun Node.input(flowInputId: Int, nodeInputId: Int) {
+    fun Node.input(flowInputId: Int, nodeInputId: Int): Node {
         connect(this@Flow, flowInputId, this, nodeInputId)
+        return this
     }
 
-    fun Node.output(nodeOutputId: Int, flowOutputId: Int) {
+    fun Node.output(nodeOutputId: Int, flowOutputId: Int): Node {
         connect(this, nodeOutputId, this@Flow, flowOutputId)
+        return this
     }
 
 
@@ -119,9 +121,11 @@ fun main() {
         addOutput(0, Int::class.java)
 
         addNode("pow1", powNode).input(0, 0)
-        addNode("pow2", powNode).output(0, 0)
+        addNode("pow2", powNode)
+        addNode("pow3", powNode).output(0, 0)
         connect("pow1", 0, "pow2", 0)
+        connect("pow2", 0, "pow3", 0)
 
     }
-    println(flow.run(mapOf(0 to 10)))
+    println(flow.run(mapOf(0 to 2)))
 }
