@@ -15,16 +15,11 @@ class DataQueue : Queue<Any> by LinkedList() {
     fun take(n: Int): List<Any> {
         val res = mutableListOf<Any>()
         repeat(n) {
-            // FIXME может нужно развернуть?
             res.add(poll())
         }
         return res
     }
 
-    // FIXME rename
-    inline fun <reified T : Any> pollAs(): T {
-        return poll() as T
-    }
 }
 
 enum class Status {
@@ -39,19 +34,6 @@ data class Connection(
     val inputId: Int
 ) {
     val data: DataQueue = DataQueue()
-
-//    override fun equals(other: Any?): Boolean {
-//        if (other !is Connection) return false
-//        return from == other.from && outputId == other.outputId && to == other.to && inputId == other.inputId
-//    }
-
-//    override fun hashCode(): Int {
-//        var result = from.hashCode()
-//        result = 31 * result + outputId
-//        result = 31 * result + to.hashCode()
-//        result = 31 * result + inputId
-//        return result
-//    }
 }
 
 class Flow(description: String) : BaseNode(description) {
@@ -137,6 +119,10 @@ class Flow(description: String) : BaseNode(description) {
                     }
                 }
 
+                nodes.forEach {
+                    if (it.status == Status.RUN)
+                        log("${it.name} is still running")
+                }
                 if (nodes.all { it.status == Status.IDLE }) break
 
                 // 2. Сидеть и ждать когда сработает колбёк по завершении какой-либо ноды
@@ -159,11 +145,13 @@ class Flow(description: String) : BaseNode(description) {
 
     private fun BaseNode.inConnections() = connections
         .filter { it.to == this }
-        .takeIf { it.size == this.inputsCount } ?: error("Not enough connections in node $this")
 
     private fun CoroutineScope.runAsync(node: BaseNode, inputs: DataById, channel: Channel<Pair<Connection, Any>>) {
         launch {
             log("run ${node.description}")
+            inputs.forEach { (id, data) ->
+                log("args: $id ---- $data")
+            }
             val outputData = node.run(inputs)
             outputData.forEach { (id, data) ->
                 val connection = connections.find { it.from == node && it.outputId == id } ?: error("a")
@@ -173,6 +161,7 @@ class Flow(description: String) : BaseNode(description) {
             }
         }
     }
+
 
     private fun log(msg: String) = println("[${Thread.currentThread().name}][${this.description}]$msg")
 
