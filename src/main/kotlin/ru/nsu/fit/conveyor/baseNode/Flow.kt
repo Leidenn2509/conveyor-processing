@@ -1,10 +1,9 @@
 package ru.nsu.fit.conveyor.baseNode
 
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.channels.receiveOrNull
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.selects.select
 import java.util.*
 
@@ -27,14 +26,22 @@ enum class Status {
     IDLE
 }
 
-data class Connection(
-    val from: BaseNode,
-    val outputId: Int,
-    val to: BaseNode,
-    val inputId: Int
+data class NodeInput(
+    val node: BaseNode,
+    val id: Int
 ) {
-    val data: DataQueue = DataQueue()
+    val dataBuffer = DataQueue()
 }
+
+data class NodeOutput(
+    val node: BaseNode,
+    val id: Int
+)
+
+data class Connection(
+    val output: NodeOutput,
+    val input: NodeInput
+)
 
 class Flow(description: String) : BaseNode(description) {
     private data class NodeWithInfo(
@@ -50,9 +57,9 @@ class Flow(description: String) : BaseNode(description) {
 
     private val connections: MutableList<Connection> = mutableListOf()
 
-    fun addNode(name: String, node: BaseNode): BaseNode = node.copy().also {
+    fun addNode(name: String, node: BaseNode): BaseNode = node.copy().also { copyNode ->
         if (nodeByName(name) != null) error("this name already exist")
-        nodes.add(NodeWithInfo(it, name, Status.IDLE))
+        nodes.add(NodeWithInfo(copyNode, name, Status.IDLE))
     }
 
     fun connect(from: String, outputId: Int, to: String, inputId: Int) {
@@ -66,16 +73,23 @@ class Flow(description: String) : BaseNode(description) {
             throw IllegalStateException("Different channels' types")
         }
 
-        val connection = Connection(fromNode, outputId, toNode, inputId)
+        val nodeOutput = connections
+            .find { it.output.node == fromNode && it.output.id == outputId }?.output
+            ?: NodeOutput(fromNode, outputId)
+
+        val nodeInput = connections
+            .find { it.input.node == toNode && it.input.id == inputId }?.input
+            ?: NodeInput(toNode, inputId)
+
+
+        val connection = Connection(nodeOutput, nodeInput)
         if (connection in connections) {
             throw IllegalStateException("Such connection already exists")
         }
-        //FIXME надо кидать исключение или удалять старое и добавлять новое?
-        if (connections.find { it.from == fromNode && it.outputId == outputId } != null) {
-            throw IllegalStateException("")
+        if (connections.find { it.output == nodeOutput } != null) {
+            throw IllegalStateException("Cant split output with id=$outputId of node $fromNode")
         }
         connections.add(connection)
-
     }
 
     fun BaseNode.flowInput(flowInputId: Int, nodeInputId: Int): BaseNode {
@@ -92,73 +106,104 @@ class Flow(description: String) : BaseNode(description) {
         // Вносим данные в инпуты Flow
         log("setup inputs")
         inputs.forEach { (id, data) ->
-            connections.find { it.from == this && it.outputId == id }
-                ?.data?.addAll(data) ?: error("No input specified with id=$id")
+            connections.find { it.output.node == this && it.output.id == id }
+                ?.input?.dataBuffer?.addAll(data) ?: error("No input specified with id=$id")
         }
 
         coroutineScope {
-            val nodeResults = Channel<Pair<Connection, Any>>()
+            val nodeResults = Channel<List<Pair<NodeOutput, Any>>>()
 
             while (true) {
                 //1. Проверить какие ноды готовы к запуску(все инпуты не пустые) и запустить их
                 log("check nodes")
                 for (nodeWithInfo in nodes) {
+                    log("check $nodeWithInfo")
                     if (nodeWithInfo.status == Status.RUN) {
                         continue
                     }
-                    val inConnections = nodeWithInfo.node.inConnections()
-                    if (inConnections.all { !it.data.isEmpty() }) {
-                        val dataReady = inConnections.minOf { it.data.size }
-
+                    val nodeInputs = nodeWithInfo.node.inConnections().map { it.input }.distinct()
+                    if (nodeInputs.all { !it.dataBuffer.isEmpty() }) {
+                        val dataReady = nodeInputs.minOf { it.dataBuffer.size }
+                        nodeWithInfo.status = Status.RUN
                         runAsync(
                             nodeWithInfo.node,
-                            inConnections.map { it.inputId to it.data.take(dataReady) }.toMap(),
+                            nodeInputs.map { it.id to it.dataBuffer.take(dataReady) }.toMap(),
                             nodeResults
                         )
-                        nodeWithInfo.status = Status.RUN
+
                     }
                 }
+                log("end of check")
 
                 nodes.forEach {
                     if (it.status == Status.RUN)
                         log("${it.name} is still running")
                 }
-                if (nodes.all { it.status == Status.IDLE }) break
+                log("break?")
+                if (nodes.all { it.status == Status.IDLE }) {
+                    nodeResults.cancel()
+                    break
+                }
 
                 // 2. Сидеть и ждать когда сработает колбёк по завершении какой-либо ноды
                 log("wait")
+
                 select<Unit> {
-                    nodeResults.onReceive { (connection, data) ->
-                        nodes.find { it.node == connection.from }?.status = Status.IDLE
-                        val withData = connections.find { it == connection } ?: error("b")
-                        withData.data.addAll(data as List<*>)
+                    nodeResults.onReceive { list ->
+                        log("receive from ${list.first().first}: ${list.map { it.second }}")
+
+                        list.forEach { (nodeOutput, data) ->
+                            val nodeInput = connections.find { it.output == nodeOutput }!!.input
+                            nodeInput.dataBuffer.addAll(data as List<*>)
+                        }
+                        nodes.find { it.node == list.first().first.node }!!.status = Status.IDLE
                     }
                 }
+
+
             }
         }
+        log("collect res")
         val res = mutableMapOf<Int, List<Any>>()
-        connections.filter { it.to == this }.forEach {
-            res[it.inputId] = it.data.toList()
+        connections.filter { it.input.node == this }.forEach {
+            res[it.input.id] = it.input.dataBuffer.toList()
         }
         return res
     }
 
     private fun BaseNode.inConnections() = connections
-        .filter { it.to == this }
+        .filter { it.input.node == this }
 
-    private fun CoroutineScope.runAsync(node: BaseNode, inputs: DataById, channel: Channel<Pair<Connection, Any>>) {
+    private fun CoroutineScope.runAsync(
+        node: BaseNode,
+        inputs: DataById,
+        channel: Channel<List<Pair<NodeOutput, Any>>>
+    ) {
         launch {
-            log("run ${node.description}")
+            log("run '${node.description}'")
             inputs.forEach { (id, data) ->
                 log("args: $id ---- $data")
             }
             val outputData = node.run(inputs)
-            outputData.forEach { (id, data) ->
-                val connection = connections.find { it.from == node && it.outputId == id } ?: error("a")
-                // 3. Полученные данные положить в connection
-                channel.send(connection to data)
+            log("results of '${node.description}: $outputData'")
 
-            }
+//            val connection = connections.find { it.output.node == node && it.output.id == id } ?: error("a")
+            val forSend = connections
+                .filter { it.output.node == node }
+                .map { it.output }
+                .map { it to outputData.getValue(it.id) }
+            log("send $forSend")
+            channel.send(
+                forSend
+            )
+
+
+//            outputData.forEach { (id, data) ->
+//                val connection = connections.find { it.output.node == node && it.output.id == id } ?: error("a")
+//                 3. Полученные данные положить в connection
+//                log("send $data to ${connection.input}")
+//                channel.send(connection to data)
+//            }
         }
     }
 
@@ -172,25 +217,48 @@ class Flow(description: String) : BaseNode(description) {
             this@Flow.nodes.forEach {
                 addNode(it.name, it.node)
             }
-            this@Flow.connections.map { c ->
-                val from = if (c.from == this@Flow) {
-                    this
-                } else {
-                    this.nodes.find { it.name == this@Flow.nodeInfo(c.from)!!.name }!!.node
-                }
-                val to = if (c.to == this@Flow) {
-                    this
-                } else {
-                    this.nodes.find { it.name == this@Flow.nodeInfo(c.to)!!.name }!!.node
-                }
 
-                Connection(
-                    from,
-                    c.outputId,
-                    to,
-                    c.inputId
-                )
-            }.forEach(this.connections::add)
+            this@Flow.connections.forEach {
+                when {
+                    it.output.node == this@Flow ->
+                        this.nodeByName(this@Flow.nodeInfo(it.input.node)!!.name)!!.node.flowInput(
+                            it.output.id,
+                            it.input.id
+                        )
+                    it.input.node == this@Flow ->
+                        this.nodeByName(this@Flow.nodeInfo(it.output.node)!!.name)!!.node.flowOutput(
+                            it.input.id,
+                            it.output.id
+                        )
+                    else -> this.connect(
+                        this@Flow.nodeInfo(it.output.node)!!.name,
+                        it.output.id,
+                        this@Flow.nodeInfo(it.input.node)!!.name,
+                        it.input.id
+                    )
+                }
+            }
+//            this@Flow.connections.map { (output, input) ->
+//
+//
+////                val from = if (output.node == this@Flow) {
+////                    this
+////                } else {
+////                    this.nodes.find { it.name == this@Flow.nodeInfo(c.from)!!.name }!!.node
+////                }
+////                val to = if (c.to == this@Flow) {
+////                    this
+////                } else {
+////                    this.nodes.find { it.name == this@Flow.nodeInfo(c.to)!!.name }!!.node
+////                }
+//
+//                Connection(
+//                    if (from.node == this@Flow) this else from,
+//                    c.outputId,
+//                    to,
+//                    c.inputId
+//                )
+//            }.forEach(this.connections::add)
         }
     }
 }
