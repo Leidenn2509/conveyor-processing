@@ -66,26 +66,31 @@ fun main() = runBlocking {
 
 //    println(powNode.run(mapOf(0 to listOf(8))))
 
-//    val flow = Flow("pow twice").apply {
-//        addInput(0, Double::class.java)
-//        addOutput(0, Double::class.java)
-//
-//        addNode("pow1", powNode).flowInput(0, 0)
-//        addNode("pow2", powNode)
-//        addNode("pow3", powNode).flowOutput(0, 0)
-//        connect("pow1", 0, "pow2", 0)
-//        connect("pow2", 0, "pow3", 0)
-//    }
+    val flow = Flow("pow twice").apply {
+        addInput(0, Double::class.java)
+        addOutput(0, Double::class.java)
+
+        addNode("pow1", powNode).flowInput(0, 0)
+        addNode("pow2", powNode)
+        addNode("pow3", powNode).flowOutput(0, 0)
+        connect("pow1", 0, "pow2", 0)
+        connect("pow2", 0, "pow3", 0)
+    }
 //    println(flow.run(mapOf(0 to listOf(1, 2, 3))))
 
     val complexFlow = Flow("hard math").apply {
         addInput(0, Double::class.java)
         addOutput(0, Double::class.java)
 
-        addNode("divider", dividerNode).flowInput(0, 0)
+        addNode("pow3", flow).flowInput(0, 0)
+
+        addNode("divider", dividerNode)
+//        addNode("divider", dividerNode).flowInput(0, 0)
         addNode("sub", subNode)
         addNode("pow", powNode)
         addNode("sum", sumNode).flowOutput(0, 0)
+
+        connect("pow3", 0, "divider", 0)
 
         connect("divider", 0, "sub", 0)
         connect("divider", 1, "pow", 0)

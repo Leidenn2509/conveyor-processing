@@ -3,6 +3,7 @@ package ru.nsu.fit.conveyor.baseNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
 import java.util.*
@@ -31,33 +32,26 @@ enum class Status {
     IDLE
 }
 
-open class Connection(
+data class Connection(
     val from: BaseNode,
     val outputId: Int,
     val to: BaseNode,
     val inputId: Int
 ) {
-    override fun equals(other: Any?): Boolean {
-        if (other !is Connection) return false
-        return from == other.from && outputId == other.outputId && to == other.to && inputId == other.inputId
-    }
+    val data: DataQueue = DataQueue()
 
-    override fun hashCode(): Int {
-        var result = from.hashCode()
-        result = 31 * result + outputId
-        result = 31 * result + to.hashCode()
-        result = 31 * result + inputId
-        return result
-    }
-}
+//    override fun equals(other: Any?): Boolean {
+//        if (other !is Connection) return false
+//        return from == other.from && outputId == other.outputId && to == other.to && inputId == other.inputId
+//    }
 
-class ConnectionWithData(
-    from: BaseNode,
-    outputId: Int,
-    to: BaseNode,
-    inputId: Int
-) : Connection(from, outputId, to, inputId) {
-    val data = DataQueue()
+//    override fun hashCode(): Int {
+//        var result = from.hashCode()
+//        result = 31 * result + outputId
+//        result = 31 * result + to.hashCode()
+//        result = 31 * result + inputId
+//        return result
+//    }
 }
 
 class Flow(description: String) : BaseNode(description) {
@@ -72,9 +66,9 @@ class Flow(description: String) : BaseNode(description) {
     private fun nodeInfo(node: BaseNode): NodeWithInfo? = nodes.find { it.node == node }
 
 
-    private val connections: MutableList<ConnectionWithData> = mutableListOf()
+    private val connections: MutableList<Connection> = mutableListOf()
 
-    fun addNode(name: String, node: Node): Node = node.copy().also {
+    fun addNode(name: String, node: BaseNode): BaseNode = node.copy().also {
         if (nodeByName(name) != null) error("this name already exist")
         nodes.add(NodeWithInfo(it, name, Status.IDLE))
     }
@@ -90,7 +84,7 @@ class Flow(description: String) : BaseNode(description) {
             throw IllegalStateException("Different channels' types")
         }
 
-        val connection = ConnectionWithData(fromNode, outputId, toNode, inputId)
+        val connection = Connection(fromNode, outputId, toNode, inputId)
         if (connection in connections) {
             throw IllegalStateException("Such connection already exists")
         }
@@ -102,59 +96,51 @@ class Flow(description: String) : BaseNode(description) {
 
     }
 
-    fun Node.flowInput(flowInputId: Int, nodeInputId: Int): Node {
+    fun BaseNode.flowInput(flowInputId: Int, nodeInputId: Int): BaseNode {
         connect(this@Flow, flowInputId, this, nodeInputId)
         return this
     }
 
-    fun Node.flowOutput(nodeOutputId: Int, flowOutputId: Int): Node {
+    fun BaseNode.flowOutput(nodeOutputId: Int, flowOutputId: Int): BaseNode {
         connect(this, nodeOutputId, this@Flow, flowOutputId)
         return this
     }
 
-    private fun runNode(node: Node) {
-        TODO()
-    }
-
     override suspend fun run(inputs: DataById): DataById {
         // Вносим данные в инпуты Flow
+        log("setup inputs")
         inputs.forEach { (id, data) ->
             connections.find { it.from == this && it.outputId == id }
                 ?.data?.addAll(data) ?: error("No input specified with id=$id")
         }
-        // 1. Проверить какие ноды готовы к запуску(все инпуты не пустые) и запустить их
-        // 2. Сидеть и ждать когда сработает колбек по завершении какой-либо ноды
-        // 3. Полученные данные положить в connection
-        // 4. Начать с 1.
-
-//        fun hasWork() = connections.
 
         coroutineScope {
             val nodeResults = Channel<Pair<Connection, Any>>()
 
-            var working = true
             while (true) {
-//                working = false
+                //1. Проверить какие ноды готовы к запуску(все инпуты не пустые) и запустить их
+                log("check nodes")
                 for (nodeWithInfo in nodes) {
                     if (nodeWithInfo.status == Status.RUN) {
-//                        working = true
                         continue
                     }
                     val inConnections = nodeWithInfo.node.inConnections()
-                    val ready = inConnections.all { !it.data.isEmpty() }
-                    if (ready) {
+                    if (inConnections.all { !it.data.isEmpty() }) {
                         val dataReady = inConnections.minOf { it.data.size }
+
                         runAsync(
                             nodeWithInfo.node,
                             inConnections.map { it.inputId to it.data.take(dataReady) }.toMap(),
                             nodeResults
                         )
-                        // FIXME а можно изменять структуру?
                         nodeWithInfo.status = Status.RUN
-//                        working = true
                     }
                 }
-                if(nodes.all { it.status == Status.IDLE }) break
+
+                if (nodes.all { it.status == Status.IDLE }) break
+
+                // 2. Сидеть и ждать когда сработает колбёк по завершении какой-либо ноды
+                log("wait")
                 select<Unit> {
                     nodeResults.onReceive { (connection, data) ->
                         nodes.find { it.node == connection.from }?.status = Status.IDLE
@@ -175,25 +161,48 @@ class Flow(description: String) : BaseNode(description) {
         .filter { it.to == this }
         .takeIf { it.size == this.inputsCount } ?: error("Not enough connections in node $this")
 
-    private fun BaseNode.outConnections() = connections
-        .filter { it.from == this }
-        .takeIf { it.size == this.outputsCount } ?: error("Not enough connections in node $this")
-
     private fun CoroutineScope.runAsync(node: BaseNode, inputs: DataById, channel: Channel<Pair<Connection, Any>>) {
-        log("${node}.runAsync with $inputs")
         launch {
-            log("run $node with $inputs")
+            log("run ${node.description}")
             val outputData = node.run(inputs)
             outputData.forEach { (id, data) ->
                 val connection = connections.find { it.from == node && it.outputId == id } ?: error("a")
-                log("send $data to $connection")
+                // 3. Полученные данные положить в connection
                 channel.send(connection to data)
+
             }
-            log("end of launch $node")
         }
-        log("end of ${node}.runAsync")
     }
 
-    private fun log(msg: String) = println("[${Thread.currentThread().name}] $msg")
+    private fun log(msg: String) = println("[${Thread.currentThread().name}][${this.description}]$msg")
+
+    override fun copy(): Flow {
+        return Flow(description).apply {
+            this@Flow.inputTypes.forEach(this::addInput)
+            this@Flow.outputTypes.forEach(this::addOutput)
+            this@Flow.nodes.forEach {
+                addNode(it.name, it.node)
+            }
+            this@Flow.connections.map { c ->
+                val from = if (c.from == this@Flow) {
+                    this
+                } else {
+                    this.nodes.find { it.name == this@Flow.nodeInfo(c.from)!!.name }!!.node
+                }
+                val to = if (c.to == this@Flow) {
+                    this
+                } else {
+                    this.nodes.find { it.name == this@Flow.nodeInfo(c.to)!!.name }!!.node
+                }
+
+                Connection(
+                    from,
+                    c.outputId,
+                    to,
+                    c.inputId
+                )
+            }.forEach(this.connections::add)
+        }
+    }
 }
 

@@ -8,7 +8,7 @@ class Node(
 ) : BaseNode(description) {
     var body: (DataById) -> DataById = { mapOf() }
 
-    fun copy(): Node {
+    override fun copy(): Node {
         return Node(description).apply {
             this@Node.inputTypes.forEach(this::addInput)
             this@Node.outputTypes.forEach(this::addOutput)
