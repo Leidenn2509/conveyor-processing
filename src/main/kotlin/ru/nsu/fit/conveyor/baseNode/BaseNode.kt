@@ -19,6 +19,12 @@ abstract class BaseNode(
         outputTypes[id] = type
     }
 
+    val inputs: Map<Int, Class<*>>
+        get() = inputTypes
+
+    val outputs: Map<Int, Class<*>>
+        get() = outputTypes
+
     val inputsCount: Int
         get() = inputTypes.size
 
