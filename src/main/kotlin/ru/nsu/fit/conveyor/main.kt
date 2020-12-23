@@ -7,20 +7,26 @@ import ru.nsu.fit.conveyor.baseNode.Node
 
 
 fun main() = runBlocking {
-    val a = DataQueue()
-    a.add(1)
-    println(a.peek())
+//    val a = DataQueue()
+//    a.add(1)
+//    a.add(2)
+//    println(a.peek())
+//    println(a.size)
+//    println(a.take(1))
+//    println(a.size)
+//    TODO()
 
     val powNode = Node("simple pow").apply {
         addInput(0, Int::class.java)
         addOutput(0, Int::class.java)
         body = { map ->
-            val a = map.getValue(0) as Int
-            mapOf(0 to a * a)
+            @Suppress("UNCHECKED_CAST")
+            val a = map.getValue(0) as List<Int>
+            mapOf(0 to a.map { it*it })
         }
     }
 
-    println(powNode.run(mapOf(0 to 8)))
+//    println(powNode.run(mapOf(0 to listOf(8))))
 
     val flow = Flow("pow twice").apply {
         addInput(0, Int::class.java)
@@ -32,5 +38,5 @@ fun main() = runBlocking {
         connect("pow1", 0, "pow2", 0)
         connect("pow2", 0, "pow3", 0)
     }
-    println(flow.run(mapOf(0 to 2)))
+    println(flow.run(mapOf(0 to listOf(1, 2, 3))))
 }
