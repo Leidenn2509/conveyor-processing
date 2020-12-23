@@ -30,4 +30,11 @@ abstract class BaseNode(
     fun getOutputType(id: Int): Class<*>? = outputTypes[id]
 
     abstract suspend fun run(inputs: DataById): DataById
+
+    open fun copy(): BaseNode {
+        return Node(description).apply {
+            this@BaseNode.inputTypes.forEach(this::addInput)
+            this@BaseNode.outputTypes.forEach(this::addOutput)
+        }
+    }
 }
