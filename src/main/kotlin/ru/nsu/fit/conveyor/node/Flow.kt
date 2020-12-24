@@ -1,9 +1,7 @@
-package ru.nsu.fit.conveyor.baseNode
+package ru.nsu.fit.conveyor.node
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.receiveOrNull
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.selects.select
 import java.util.*
 
@@ -103,6 +101,9 @@ class Flow(description: String) : BaseNode(description) {
     }
 
     override suspend fun run(inputs: DataById): DataById {
+        connections.forEach {
+            it.input.dataBuffer.clear()
+        }
         // Вносим данные в инпуты Flow
         log("setup inputs")
         inputs.forEach { (id, data) ->

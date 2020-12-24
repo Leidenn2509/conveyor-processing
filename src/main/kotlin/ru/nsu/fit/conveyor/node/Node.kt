@@ -1,4 +1,4 @@
-package ru.nsu.fit.conveyor.baseNode
+package ru.nsu.fit.conveyor.node
 
 import java.util.*
 
