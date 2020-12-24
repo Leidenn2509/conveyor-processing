@@ -1,4 +1,4 @@
-package ru.nsu.fit.conveyor.baseNode
+package ru.nsu.fit.conveyor.node
 
 typealias DataById = Map<Int, List<Any>>
 //typealias DataListById = Map<Int, List<Any>>

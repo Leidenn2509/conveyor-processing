@@ -1,8 +1,6 @@
-package ru.nsu.fit.conveyor.baseNode
+package ru.nsu.fit.conveyor.node
 
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -15,13 +13,7 @@ class NodeTest {
 
     @Test
     fun testRunSimpleNode() {
-        val identityNode = Node("identity").apply {
-            addInput(0, Any::class.java)
-            addOutput(0, Any::class.java)
-            body = {
-                it
-            }
-        }
+        val identityNode = TestUtils.identityNode()
         runBlocking {
             mapOf(0 to listOf<Any>(1)).let {
                 assertEquals(identityNode.run(it), it)
