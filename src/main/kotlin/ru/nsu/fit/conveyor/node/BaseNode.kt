@@ -1,13 +1,10 @@
 package ru.nsu.fit.conveyor.node
 
 typealias DataById = Map<Int, List<Any>>
-//typealias DataListById = Map<Int, List<Any>>
 
 abstract class BaseNode(
     val description: String
 ) {
-    // FIXME нужна ли какая-то оченедь входных данных?
-
     protected val inputTypes: MutableMap<Int, Class<*>> = mutableMapOf()
     protected val outputTypes: MutableMap<Int, Class<*>> = mutableMapOf()
 

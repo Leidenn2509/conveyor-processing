@@ -7,8 +7,6 @@ import java.util.*
 
 
 class DataQueue : Queue<Any> by LinkedList() {
-    // TODO всякие удобные методы с приведением типа
-
     fun take(n: Int): List<Any> {
         val res = mutableListOf<Any>()
         repeat(n) {
@@ -160,8 +158,6 @@ class Flow(description: String) : BaseNode(description) {
                         nodes.find { it.node == list.first().first.node }!!.status = Status.IDLE
                     }
                 }
-
-
             }
         }
         log("collect res")
@@ -188,7 +184,6 @@ class Flow(description: String) : BaseNode(description) {
             val outputData = node.run(inputs)
             log("results of '${node.description}: $outputData'")
 
-//            val connection = connections.find { it.output.node == node && it.output.id == id } ?: error("a")
             val forSend = connections
                 .filter { it.output.node == node }
                 .map { it.output }
@@ -197,14 +192,6 @@ class Flow(description: String) : BaseNode(description) {
             channel.send(
                 forSend
             )
-
-
-//            outputData.forEach { (id, data) ->
-//                val connection = connections.find { it.output.node == node && it.output.id == id } ?: error("a")
-//                 3. Полученные данные положить в connection
-//                log("send $data to ${connection.input}")
-//                channel.send(connection to data)
-//            }
         }
     }
 

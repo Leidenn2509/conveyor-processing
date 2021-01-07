@@ -16,7 +16,8 @@ class Node(
         }
     }
 
-    override suspend fun run(inputs: DataById): DataById = body(inputs)
+    override suspend fun run(inputs: DataById): DataById =
+        body(inputs)
 }
 
 
