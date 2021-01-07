@@ -1,6 +1,8 @@
 package ru.nsu.fit.conveyor.node
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import kotlin.math.pow
@@ -35,6 +37,7 @@ class FlowTest {
         val flow = Flow("id").apply {
             addInput(0, Int::class.java)
             addOutput(0, Int::class.java)
+
             addNode("id", TestUtils.identityNode(Int::class.java))
                 .flowInput(0, 0)
                 .flowOutput(0, 0)
@@ -52,13 +55,17 @@ class FlowTest {
 
     @Test
     fun testPowFlow() {
+        val time = 1000L
         val powNode = Node("simple pow").apply {
             addInput(0, Double::class.java)
             addOutput(0, Double::class.java)
             body = { map ->
-                @Suppress("UNCHECKED_CAST")
-                val a = map.getValue(0) as List<Double>
-                mapOf(0 to a.map { it * it })
+                runBlocking {
+                    delay(time)
+                    @Suppress("UNCHECKED_CAST")
+                    val a = map.getValue(0) as List<Double>
+                    mapOf(0 to a.map { it * it })
+                }
             }
         }
         val flow = Flow("x^8").apply {
@@ -68,6 +75,7 @@ class FlowTest {
             addNode("pow1", powNode).flowInput(0, 0)
             addNode("pow2", powNode)
             addNode("pow3", powNode).flowOutput(0, 0)
+
             connect("pow1", 0, "pow2", 0)
             connect("pow2", 0, "pow3", 0)
         }
@@ -76,8 +84,10 @@ class FlowTest {
                 assertEquals(it.map { (k, v) -> k to v.map { d -> d.pow(8) } }.toMap(), flow.run(it))
             }
 
-            mapOf(0 to listOf(1.0, 2.0, 3.0)).let {
-                assertEquals(it.map { (k, v) -> k to v.map { d -> d.pow(8) } }.toMap(), flow.run(it))
+            withTimeout(time * 6) {
+                mapOf(0 to listOf(1.0, 2.0, 3.0)).let {
+                    assertEquals(it.map { (k, v) -> k to v.map { d -> d.pow(8) } }.toMap(), flow.run(it))
+                }
             }
         }
     }
@@ -86,6 +96,7 @@ class FlowTest {
     fun testCyclicalFlow() {
         val halfNode = Node("half").apply {
             addInput(0, Double::class.java)
+
             addOutput(0, Double::class.java)
             addOutput(1, Double::class.java)
             body = { map ->
@@ -209,6 +220,7 @@ class FlowTest {
                     }
                 }.toMap(), complexFlow.run(it))
             }
+
         }
     }
 }
