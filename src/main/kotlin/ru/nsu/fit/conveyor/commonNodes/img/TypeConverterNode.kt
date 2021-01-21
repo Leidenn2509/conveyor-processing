@@ -3,7 +3,7 @@ package ru.nsu.fit.conveyor.commonNodes.img
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import ru.nsu.fit.conveyor.node.NewBaseNode
+import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.NodeInput
 import ru.nsu.fit.conveyor.node.NodeOutput
 
@@ -12,7 +12,7 @@ import ru.nsu.fit.conveyor.node.NodeOutput
 open class TypeConverterNode(
     val toType: Image.Type,
     description: String = "Change type to $toType"
-) : NewBaseNode(description) {
+) : BaseNode(description) {
 
     init {
         inputs[0] = NodeInput(this, 0, Image::class)

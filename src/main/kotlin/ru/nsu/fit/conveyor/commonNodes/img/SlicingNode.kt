@@ -2,12 +2,12 @@ package ru.nsu.fit.conveyor.commonNodes.img
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import ru.nsu.fit.conveyor.node.NewBaseNode
+import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.NodeInput
 import ru.nsu.fit.conveyor.node.NodeOutput
 
 @ExperimentalCoroutinesApi
-class SlicingNode : NewBaseNode("Slicing into areas") {
+class SlicingNode : BaseNode("Slicing into areas") {
     init {
         inputs[0] = NodeInput(this, 0, Image::class)
         inputs[1] = NodeInput(this, 1, Int::class)

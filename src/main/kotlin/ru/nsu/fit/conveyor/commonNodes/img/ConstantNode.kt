@@ -2,13 +2,12 @@ package ru.nsu.fit.conveyor.commonNodes.img
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
-import ru.nsu.fit.conveyor.node.NewBaseNode
+import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.NodeInput
 import ru.nsu.fit.conveyor.node.NodeOutput
 
 @ExperimentalCoroutinesApi
-class ConstantNode(description: String) : NewBaseNode(description) {
+class ConstantNode(description: String) : BaseNode(description) {
     init {
         inputs[0] = NodeInput(this, 0, Int::class)
         inputs[1] = NodeInput(this, 1, Int::class)
