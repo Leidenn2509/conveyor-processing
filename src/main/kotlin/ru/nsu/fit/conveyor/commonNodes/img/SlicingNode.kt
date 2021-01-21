@@ -2,6 +2,7 @@ package ru.nsu.fit.conveyor.commonNodes.img
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.NodeInput
 import ru.nsu.fit.conveyor.node.NodeOutput
@@ -58,6 +59,7 @@ class SlicingNode : BaseNode("Slicing into areas") {
         val image = inputImage.receive()
         val width = image.width / n!!
         for (i in 0 until n!!) {
+            delay(1000)
             output.send(
                 Image(
                     width,
