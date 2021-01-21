@@ -2,13 +2,12 @@ package ru.nsu.fit.conveyor.commonNodes.img
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
 import ru.nsu.fit.conveyor.node.*
 
 @ExperimentalCoroutinesApi
 @Suppress("LeakingThis")
-open class FilterNode(description: String, val filter: Filter) : NewBaseNode(description) {
+open class FilterNode(description: String, val filter: Filter) : BaseNode(description) {
     init {
         inputs[0] = NodeInput(this, 0, Image::class)
         outputs[0] = NodeOutput(this, 0, Image::class)

@@ -3,13 +3,13 @@ package ru.nsu.fit.conveyor.commonNodes.img
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import ru.nsu.fit.conveyor.node.NewBaseNode
+import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.NodeInput
 import ru.nsu.fit.conveyor.node.NodeOutput
 import kotlin.random.Random
 
 @ExperimentalCoroutinesApi
-class ChooseNodeFromN(val n: Int) : NewBaseNode("ChooseNode") {
+class ChooseNodeFromN(val n: Int) : BaseNode("ChooseNode") {
     init {
         outputs[0] = NodeOutput(this, 0, Image::class)
         for (i in 0 until n) {
