@@ -8,38 +8,45 @@ import ru.nsu.fit.conveyor.node.NodeOutput
 
 @ExperimentalCoroutinesApi
 class PanoramaNode : BaseNode("Panorama") {
+    private inner class PanoramaNodeContext : Context() {
+        @Suppress("UNCHECKED_CAST")
+        val inputImages: Channel<Image>
+            get() = inputs[0]!!.channel as Channel<Image>
 
-    init {
-        inputs[0] = NodeInput(this, 0, Image::class)
-        inputs[1] = NodeInput(this, 1, Int::class)
-        outputs[0] = NodeOutput(this, 0, Image::class)
+        @Suppress("UNCHECKED_CAST")
+        val inputN: Channel<Int>
+            get() = inputs[1]!!.channel as Channel<Int>
+
+        @Suppress("UNCHECKED_CAST")
+        val output: Channel<Image>
+            get() = outputs[0]!!.channel as Channel<Image>
+
+        var n: Int? = null
+
+        init {
+            inputs[0] = NodeInput(this@PanoramaNode, 0, Image::class)
+            inputs[1] = NodeInput(this@PanoramaNode, 1, Int::class)
+            outputs[0] = NodeOutput(this@PanoramaNode, 0, Image::class)
+        }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private val inputImages: Channel<Image>
-        get() = inputs[0]!!.channel as Channel<Image>
+    override fun initContext(withContext: Any?) {
+        contexts[withContext] = PanoramaNodeContext()
+    }
 
-    @Suppress("UNCHECKED_CAST")
-    private val inputN: Channel<Int>
-        get() = inputs[1]!!.channel as Channel<Int>
-
-    @Suppress("UNCHECKED_CAST")
-    private val output: Channel<Image>
-        get() = outputs[0]!!.channel as Channel<Image>
-
-
-    var n: Int? = null
-
-    override val isReady: Boolean
-        get() {
-            return if (n == null) {
-                !inputN.isEmpty && !inputImages.isEmpty
-            } else {
-                !inputImages.isEmpty
-            }
+    override fun isReady(withContext: Any?): Boolean = with(contexts[withContext]!! as PanoramaNodeContext) {
+        return if (n == null) {
+            !inputN.isEmpty && !inputImages.isEmpty
+        } else {
+            !inputImages.isEmpty
         }
+    }
 
-    override suspend fun body() {
+    init {
+        initContext(null)
+    }
+
+    override suspend fun body(context: Context) = with(context as PanoramaNodeContext) {
         if (n == null) {
             n = inputN.receive()
         } else if (n != null && !inputN.isEmpty) {

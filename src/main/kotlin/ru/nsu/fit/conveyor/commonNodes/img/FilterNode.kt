@@ -8,30 +8,40 @@ import ru.nsu.fit.conveyor.node.*
 @ExperimentalCoroutinesApi
 @Suppress("LeakingThis")
 open class FilterNode(description: String, val filter: Filter) : BaseNode(description) {
-    init {
-        inputs[0] = NodeInput(this, 0, Image::class)
-        outputs[0] = NodeOutput(this, 0, Image::class)
+    private inner class FilterContext: Context() {
+        @Suppress("UNCHECKED_CAST")
+        val inputImg: Channel<Image>
+            get() = inputs[0]!!.channel as Channel<Image>
+
+        @Suppress("UNCHECKED_CAST")
+        val outputImg: Channel<Image>
+            get() = outputs[0]!!.channel as Channel<Image>
+
+        init {
+            inputs[0] = NodeInput(this@FilterNode, 0, Image::class)
+            outputs[0] = NodeOutput(this@FilterNode, 0, Image::class)
+        }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private val inputImg: Channel<Image>
-        get() = inputs[0]!!.channel as Channel<Image>
+    override fun initContext(withContext: Any?) {
+        contexts[withContext] = FilterContext()
+    }
 
-    @Suppress("UNCHECKED_CAST")
-    private val outputImg: Channel<Image>
-        get() = outputs[0]!!.channel as Channel<Image>
+    init {
+        initContext(null)
+    }
 
-    override suspend fun body() {
-        log("Try receive image")
+    override suspend fun body(context: Context) = with(context as FilterContext) {
+        log("Try receive image", context)
         val image = inputImg.receive()
-        log("Receive image: $image")
-        log("Do work")
+        log("Receive image: $image", context)
+        log("Do work", context)
         delay(DELAY)
         image.operations.add(filter)
-        log("New image: $image")
-        log("Send new image to outputs")
+        log("New image: $image", context)
+        log("Send new image to outputs", context)
         outputImg.send(image)
-        log("End of work")
+        log("End of work", context)
     }
 
     companion object {

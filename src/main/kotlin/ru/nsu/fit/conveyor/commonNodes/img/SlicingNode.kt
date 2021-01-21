@@ -8,37 +8,46 @@ import ru.nsu.fit.conveyor.node.NodeOutput
 
 @ExperimentalCoroutinesApi
 class SlicingNode : BaseNode("Slicing into areas") {
-    init {
-        inputs[0] = NodeInput(this, 0, Image::class)
-        inputs[1] = NodeInput(this, 1, Int::class)
-        outputs[0] = NodeOutput(this, 0, Image::class)
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private val inputImage: Channel<Image>
-        get() = inputs[0]!!.channel as Channel<Image>
-
-    @Suppress("UNCHECKED_CAST")
-    private val inputN: Channel<Int>
-        get() = inputs[1]!!.channel as Channel<Int>
-
-    @Suppress("UNCHECKED_CAST")
-    private val output: Channel<Image>
-        get() = outputs[0]!!.channel as Channel<Image>
-
-
-    var n: Int? = null
-
-    override val isReady: Boolean
-        get() {
-            return if (n == null) {
-                !inputN.isEmpty && !inputImage.isEmpty
-            } else {
-                !inputImage.isEmpty
-            }
+    private inner class SlicingNodeContext: Context() {
+        init {
+            inputs[0] = NodeInput(this@SlicingNode, 0, Image::class)
+            inputs[1] = NodeInput(this@SlicingNode, 1, Int::class)
+            outputs[0] = NodeOutput(this@SlicingNode, 0, Image::class)
         }
 
-    override suspend fun body() {
+        @Suppress("UNCHECKED_CAST")
+        val inputImage: Channel<Image>
+            get() = inputs[0]!!.channel as Channel<Image>
+
+        @Suppress("UNCHECKED_CAST")
+        val inputN: Channel<Int>
+            get() = inputs[1]!!.channel as Channel<Int>
+
+        @Suppress("UNCHECKED_CAST")
+        val output: Channel<Image>
+            get() = outputs[0]!!.channel as Channel<Image>
+
+
+        var n: Int? = null
+    }
+
+    override fun initContext(withContext: Any?) {
+        contexts[withContext] = SlicingNodeContext()
+    }
+
+    init {
+        initContext(null)
+    }
+
+    override fun isReady(withContext: Any?): Boolean = with(contexts[withContext] as SlicingNodeContext) {
+        return if (n == null) {
+            !inputN.isEmpty && !inputImage.isEmpty
+        } else {
+            !inputImage.isEmpty
+        }
+    }
+
+    override suspend fun body(context: Context) = with(context as SlicingNodeContext) {
         if (n == null) {
             n = inputN.receive()
         } else if (n != null && !inputN.isEmpty) {

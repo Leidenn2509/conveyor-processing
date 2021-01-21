@@ -10,18 +10,28 @@ import kotlin.random.Random
 
 @ExperimentalCoroutinesApi
 class ChooseNodeFromN(val n: Int) : BaseNode("ChooseNode") {
-    init {
-        outputs[0] = NodeOutput(this, 0, Image::class)
-        for (i in 0 until n) {
-            inputs[i] = NodeInput(this, i, Image::class)
+    private inner class ChooseNodeFromNContext : Context() {
+        @Suppress("UNCHECKED_CAST")
+        val outputImg: Channel<Image>
+            get() = outputs[0]!!.channel as Channel<Image>
+
+        init {
+            outputs[0] = NodeOutput(this@ChooseNodeFromN, 0, Image::class)
+            for (i in 0 until n) {
+                inputs[i] = NodeInput(this@ChooseNodeFromN, i, Image::class)
+            }
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private val outputImg: Channel<Image>
-        get() = outputs[0]!!.channel as Channel<Image>
+    override fun initContext(withContext: Any?) {
+        contexts[withContext] = ChooseNodeFromNContext()
+    }
 
-    override suspend fun body() {
+    init {
+        initContext(null)
+    }
+
+    override suspend fun body(context: Context) = with(context as ChooseNodeFromNContext) {
         val images = mutableListOf<Image>()
         inputs.forEach { (_, input) ->
             @Suppress("UNCHECKED_CAST")
