@@ -8,33 +8,43 @@ import ru.nsu.fit.conveyor.node.NodeOutput
 
 @ExperimentalCoroutinesApi
 class ConstantNode(description: String) : BaseNode(description) {
-    init {
-        inputs[0] = NodeInput(this, 0, Int::class)
-        inputs[1] = NodeInput(this, 1, Int::class)
-        outputs[0] = NodeOutput(this, 0, Int::class)
+    private inner class ConstantNodeContext : Context() {
+        @Suppress("UNCHECKED_CAST")
+        val inputN: Channel<Int>
+            get() = inputs[0]!!.channel as Channel<Int>
+
+        @Suppress("UNCHECKED_CAST")
+        val inputCount: Channel<Int>
+            get() = inputs[1]!!.channel as Channel<Int>
+
+
+        @Suppress("UNCHECKED_CAST")
+        val output: Channel<Int>
+            get() = outputs[0]!!.channel as Channel<Int>
+
+        init {
+            inputs[0] = NodeInput(this@ConstantNode, 0, Int::class)
+            inputs[1] = NodeInput(this@ConstantNode, 1, Int::class)
+            outputs[0] = NodeOutput(this@ConstantNode, 0, Int::class)
+        }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private val inputN: Channel<Int>
-        get() = inputs[0]!!.channel as Channel<Int>
+    override fun initContext(withContext: Any?) {
+        contexts[withContext] = ConstantNodeContext()
+    }
 
-    @Suppress("UNCHECKED_CAST")
-    private val inputCount: Channel<Int>
-        get() = inputs[1]!!.channel as Channel<Int>
+    init {
+        initContext(null)
+    }
 
-
-    @Suppress("UNCHECKED_CAST")
-    private val output: Channel<Int>
-        get() = outputs[0]!!.channel as Channel<Int>
-
-    override suspend fun body() {
-        log("Enter while")
+    override suspend fun body(context: Context) = with(context as ConstantNodeContext) {
+        log("Enter while", context)
         val n = inputN.receive()
         repeat(inputCount.receive()) {
-            log("Send n=$n")
+            log("Send n=$n", context)
             output.send(n)
         }
-        log("End of work")
+        log("End of work", context)
     }
 
     companion object {
