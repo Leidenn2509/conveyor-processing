@@ -2,6 +2,7 @@ package ru.nsu.fit.conveyor.node
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
@@ -29,8 +30,8 @@ abstract class NewBaseNode(
     val description: String
 ) {
     // FIXME replace map with list
-    protected val outputs = mutableMapOf<Int, NodeOutput<Any>>()
-    protected val inputs = mutableMapOf<Int, NodeInput<Any>>()
+    val outputs = mutableMapOf<Int, NodeOutput<Any>>()
+    val inputs = mutableMapOf<Int, NodeInput<Any>>()
 
     suspend fun <T: Any> sendArg(id: Int, data: T) {
         inputs[id]?.let {
@@ -66,13 +67,18 @@ abstract class NewBaseNode(
             !input.channel.isEmpty
         }
 
-    suspend fun tryRun(coroutineScope: CoroutineScope) = coroutineScope.launch {
+    var isRunning: Boolean = false
+        protected set
+
+    open suspend fun tryRun(coroutineScope: CoroutineScope): Job = coroutineScope.launch {
         log("Try run")
         while (isReady) {
             log("Ready and run")
+            isRunning = true
             body()
             tryRunOutputs(coroutineScope)
         }
+        isRunning = false
     }
 
     private suspend fun tryRunOutputs(coroutineScope: CoroutineScope) {
