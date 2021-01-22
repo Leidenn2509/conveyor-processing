@@ -49,6 +49,7 @@ class SlicingNode : BaseNode("Slicing into areas") {
     }
 
     override suspend fun body(context: Context) = with(context as SlicingNodeContext) {
+        log("slicing start", context)
         if (n == null) {
             n = inputN.receive()
         } else if (n != null && !inputN.isEmpty) {
@@ -60,13 +61,15 @@ class SlicingNode : BaseNode("Slicing into areas") {
         val width = image.width / n!!
         for (i in 0 until n!!) {
             delay(1000)
+            val newImage = Image(
+                width,
+                image.height,
+                image.type,
+                mutableListOf(Slicing(i, n!!, image))
+            )
+            log("slicing send $newImage", context)
             output.send(
-                Image(
-                    width,
-                    image.height,
-                    image.type,
-                    mutableListOf(Slicing(i, n!!, image))
-                )
+                newImage
             )
         }
 

@@ -6,10 +6,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
-import ru.nsu.fit.conveyor.commonNodes.img.FilterNode
-import ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
-import ru.nsu.fit.conveyor.commonNodes.img.Gaussian
-import ru.nsu.fit.conveyor.commonNodes.img.Image
+import ru.nsu.fit.conveyor.commonNodes.img.*
 import kotlin.system.measureTimeMillis
 
 @ExperimentalCoroutinesApi
@@ -69,6 +66,50 @@ class FlowTest {
         Assertions.assertEquals(out.operations.size, 2)
         Assertions.assertEquals(out.operations.first()::class, Gaussian::class)
         Assertions.assertEquals(out.operations.last()::class, Gaussian::class)
+    }
+
+    @Test
+    fun testSlicingFlow() = runBlocking {
+        val flow = Flow("").apply {
+            addInput(0, Image::class)
+            addInput(1, Int::class)
+            addOutput(0, Image::class)
+
+            addNode(0, SlicingNode())
+            addNode(1, GaussFilter())
+
+            connect(0, 0, 1, 0)
+
+            connectFlowInput(0, node(0), 0)
+            connectFlowInput(1, node(0), 1)
+            connectFlowOutput(0, node(1), 0)
+        }
+        val width = 300
+        val height = 300
+        val type = Image.Type.PNG
+
+        val image = Image(width, height, type)
+        flow.sendArg(0, image)
+        flow.sendArg(1, 2)
+
+        flow.tryRun(this)
+
+        val out = mutableListOf<Image>()
+
+        repeat(2) {
+            out.add(flow.receiveArg(0) as Image)
+        }
+
+        Assertions.assertEquals(out.size, 2)
+
+        out.forEach {
+            Assertions.assertEquals(width/2, it.width)
+            Assertions.assertEquals(it.height, height)
+            Assertions.assertEquals(it.type, type)
+            Assertions.assertEquals(it.operations.size, 2)
+            Assertions.assertEquals(it.operations.first()::class, Slicing::class)
+            Assertions.assertEquals(it.operations.last()::class, Gaussian::class)
+        }
     }
 
     @Test

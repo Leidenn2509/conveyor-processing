@@ -50,6 +50,4 @@ class ConstantNode : BaseNode("Constant node") {
     companion object {
         const val DELAY = 1000L
     }
-
-    var dummy = "lalalal"
 }
