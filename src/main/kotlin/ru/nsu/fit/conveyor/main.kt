@@ -1,129 +1,140 @@
 package ru.nsu.fit.conveyor
 
+//import com.github.h0tk3y.betterParse.parser.parseToEnd
+import com.github.h0tk3y.betterParse.grammar.parseToEnd
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import ru.nsu.fit.conveyor.baseNode.DataQueue
-import ru.nsu.fit.conveyor.baseNode.Flow
-import ru.nsu.fit.conveyor.baseNode.Node
+import ru.nsu.fit.conveyor.commonNodes.img.ConstantNode
+import ru.nsu.fit.conveyor.commonNodes.img.Gaussian
+import ru.nsu.fit.conveyor.commonNodes.img.Image
+import ru.nsu.fit.conveyor.node.BaseNode
+import ru.nsu.fit.conveyor.node.Flow
 
 fun log(msg: String) = println("[${Thread.currentThread().name}] $msg")
 
 
+@ExperimentalCoroutinesApi
 fun main() = runBlocking {
-//    val a = DataQueue()
-//    a.add(1)
-//    a.add(2)
-//    println(a.peek())
-//    println(a.size)
-//    println(a.take(1))
-//    println(a.size)
-//    TODO()
+    //    val word = regexToken("\\w+")
+//    val cm = literalToken(",")
+//    val ws = regexToken("\\s+", ignore = true)
+//    val tokenizer = DefaultTokenizer(listOf(word, cm, ws))
+//    val tokenMatches/*: Sequence<TokenMatch> */= tokenizer.tokenize("hello, world")
+//    val result = word.tryParse(tokenMatches, 0)
 
-//    val powNode = Node("simple pow").apply {
-//        addInput(0, Double::class.java)
-//        addOutput(0, Double::class.java)
-//        body = { map ->
-//            @Suppress("UNCHECKED_CAST")
-//            val a = map.getValue(0) as List<Double>
-//            mapOf(0 to a.map { it * it })
-//        }
-//    }
-//
-//    val dividerNode = Node("2 to 3").apply {
-//        addInput(0, Double::class.java)
-//        addOutput(0, Double::class.java)
-//        addOutput(1, Double::class.java)
-//        body = { map ->
-//            val a = map.getValue(0).map { (it as Double) / 5.0 }
-//            mapOf(
-//                0 to a.map { 2.0 * it },
-//                1 to a.map { 3.0 * it }
-//            )
-//        }
-//    }
-//
-//    val subNode = Node("-3").apply {
-//        addInput(0, Double::class.java)
-//        addOutput(0, Double::class.java)
-//        body = { map ->
-//            val a = map.getValue(0).map { (it as Double) - 3.0 }
-//            mapOf(
-//                0 to a
-//            )
-//        }
-//    }
-//
-//    val sumNode = Node("+").apply {
-//        addInput(0, Double::class.java)
-//        addInput(1, Double::class.java)
-//        addOutput(0, Double::class.java)
-//        body = { map ->
-//            val a = map.getValue(0).map { it as Double }
-//            val b = map.getValue(1).map { it as Double }
-//            mapOf(
-//                0 to a.zip(b).map { it.first + it.second }
-//            )
-//        }
-//    }
-//
-////    println(powNode.run(mapOf(0 to listOf(8))))
-//
-//    val flow = Flow("pow twice").apply {
-//        addInput(0, Double::class.java)
-//        addOutput(0, Double::class.java)
-//
-//        addNode("pow1", powNode).flowInput(0, 0)
-//        addNode("pow2", powNode)
-//        addNode("pow3", powNode).flowOutput(0, 0)
-//        connect("pow1", 0, "pow2", 0)
-//        connect("pow2", 0, "pow3", 0)
-//    }
-////    println(flow.run(mapOf(0 to listOf(1, 2, 3))))
-//
-//    val complexFlow = Flow("hard math").apply {
-//        addInput(0, Double::class.java)
-//        addOutput(0, Double::class.java)
-//
-//        addNode("pow3", flow).flowInput(0, 0)
-//
-//        addNode("divider", dividerNode)
-////        addNode("divider", dividerNode).flowInput(0, 0)
-//        addNode("sub", subNode)
-//        addNode("pow", powNode)
-//        addNode("sum", sumNode).flowOutput(0, 0)
-//
-//        connect("pow3", 0, "divider", 0)
-//
-//        connect("divider", 0, "sub", 0)
-//        connect("divider", 1, "pow", 0)
-//        connect("sub", 0, "sum", 0)
-//        connect("pow", 0, "sum", 1)
-//    }
-//    println(complexFlow.run(mapOf(0 to listOf(5.0, 10.0, 3.0))))
-//
-//
-    val halfNode = Node("half").apply {
-        addInput(0, Double::class.java)
-        addOutput(0, Double::class.java)
-        addOutput(1, Double::class.java)
-        body = { map ->
-            val a = map.getValue(0).map { (it as Double) }
-            val res = a.mapNotNull { if (it > 1.0) it / 2 else null }
-            mapOf(
-                0 to res,
-                1 to res
-            )
+//    val a = regexToken("a+")
+//    val b = regexToken("b+")
+//    val tokenMatches = DefaultTokenizer(listOf(a, b)).tokenize("aabbaaa")
+//    val aresult = a.tryParse(tokenMatches, 0)
+//    val bresult = b.tryParse(tokenMatches, 1)
+//    println(aresult)
+//    println(bresult)
+    /*val tokenMatches = DefaultTokenizer(listOf(a, b)).tokenize("aabbaaa")
+    val aba = a and b and a
+    val abatext = a and b and a map {it.t1.text + " " + it.t2.text + " " + it.t3.text }
+    val abaresult = aba.tryParse(tokenMatches, 0)
+    val abatextresult = abatext.tryParse(tokenMatches, 0)
+    println(abatextresult)*/
+//    val id = regexToken("\\w+")
+//    val aText = a map{ it.text } // Parser<String>, returns the matched text from the input sequence
+//    val atextresult = aText.tryParse(tokenMatches, 0)
+//    println(atextresult)
+
+
+    val name = ConstantNode::class.simpleName
+    val qname = ConstantNode::class.qualifiedName
+    val class_ = Class.forName(qname)
+    println(name)
+    println(qname)
+    println(class_.name)
+    val cn = class_.newInstance()
+//    val cn = ConstantNode::class.java.newInstance()
+    println(cn)
+//    var ct = ConstantNode.javaClass.getDeclaredConstructor()
+//    var ct = ConstantNode::class.java.getDeclaredConstructor()
+//    val inst = ct.newInstance()
+//    println(inst)
+
+
+    /*val expr = "purpurpur " + System.lineSeparator() +
+            "0 :ru.nsu.fit.conveyor.commonNodes.img.GaussFilter       " + System.lineSeparator() +
+            "0 : FLOW/0 "+ System.lineSeparator() +
+            "1: FLOW/     1 " + System.lineSeparator() +
+            "1 :ru.nsu.fit.conveyor.commonNodes.img.GaussFilter" + System.lineSeparator() +
+            "0 : 0/0 "+
+            "1: 0/1" + System.lineSeparator() +
+            "FLOW" + System.lineSeparator() +
+            "0 : 1 /0 " + System.lineSeparator() +
+            "FLOW_INPUT_DATA" + System.lineSeparator() +
+            "0 : ru.nsu.fit.conveyor.commonNodes.img.Image" + System.lineSeparator() +
+            "FLOW_OUTPUT_DATA" + System.lineSeparator() +
+            "0 : ru.nsu.fit.conveyor.commonNodes.img.Image"
+*/
+
+    val expr = """
+      simple_conveyor
+      0 : ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
+      0 : FLOW /   0
+    """.trimIndent()
+
+    val fileParser = FileParser()
+    val res = fileParser.parseToEnd(expr)
+//    val num = regexToken("\\d+")
+//    val tokenMatches = DefaultTokenizer(listOf(num)).tokenize("0")
+//    val res = (num map {it.text}).tryParse(tokenMatches, 0)
+//    println(res)
+    println("flow name")
+    println(fileParser.flowName)
+    println("nodes classes")
+    println(fileParser.nodesClasses)
+    println("nodes inputs")
+    println(fileParser.nodesInputs)
+    println("flow outputs")
+    println(fileParser.flowOutputs)
+    println("flow input data")
+    println(fileParser.flowInputData)
+    println("flow output data")
+    println(fileParser.flowOutputData)
+    val flow = Flow(fileParser.flowName).apply {
+        fileParser.nodesClasses.forEach { (id, clazz) ->
+            addNode(id, clazz.newInstance() as BaseNode)
         }
 
-    }
-    val forFlow = Flow("for").apply {
-        addInput(0, Double::class.java)
-        addOutput(0, Double::class.java)
+        fileParser.nodesInputs.forEach { (id, nodeChannels) ->
+            nodeChannels.forEach{ nc ->
+                if (nc.otherNodeId != -1)
+                    connect(id, nc.channelId, nc.otherNodeId, nc.otherChannelId)
+                else
+                    connectFlowInput(nc.otherChannelId, node(id), nc.channelId)
+            }
+        }
 
-        addNode("half", halfNode)
-            .flowInput(0, 0)
-            .flowOutput(1, 0)
-        connect("half", 0, "half", 0)
-    }
-    println(forFlow.run(mapOf(0 to listOf(10))))
+        fileParser.flowOutputs.forEach { nc ->
+            connectFlowOutput(nc.channelId, node(nc.otherNodeId), nc.otherChannelId)
+        }
 
+        fileParser.flowInputData.forEach { (id, type) ->
+            addInput(id, type.kotlin)
+        }
+
+        fileParser.flowOutputData.forEach { (id, type) ->
+            addOutput(id, type.kotlin)
+        }
+    }
+
+    val width = 300
+    val height = 300
+    val type = Image.Type.PNG
+
+    val image = Image(width, height, type)
+    flow.sendArg(0, image)
+    flow.tryRun(this)
+
+    val out = flow.receiveArg(0) as Image
+    println(out.width == width)
+    println(out.height == height)
+    println(out.type == type)
+    println(out.operations.size == 2)
+    println(out.operations.first()::class == Gaussian::class)
+    println(out.operations.last()::class == Gaussian::class)
 }

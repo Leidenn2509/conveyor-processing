@@ -73,10 +73,10 @@ class FlowTest {
 
     @Test
     fun testThree() = runBlocking {
-        val node1 = GaussFilter("1")
-        val node2 = GaussFilter("2")
-        val node3 = GaussFilter("3")
-        val node4 = GaussFilter("4")
+        val node1 = GaussFilter()
+        val node2 = GaussFilter()
+        val node3 = GaussFilter()
+        val node4 = GaussFilter()
 
         val flow = Flow("f1").apply {
             addInput(0, Image::class)

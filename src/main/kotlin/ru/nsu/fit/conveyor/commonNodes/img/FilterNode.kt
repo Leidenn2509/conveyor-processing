@@ -50,4 +50,4 @@ open class FilterNode(description: String, val filter: Filter) : BaseNode(descri
 }
 
 @ExperimentalCoroutinesApi
-class GaussFilter(description: String = "Gauss Filter") : FilterNode(description, Gaussian())
+class GaussFilter : FilterNode("Gauss Filter", Gaussian())

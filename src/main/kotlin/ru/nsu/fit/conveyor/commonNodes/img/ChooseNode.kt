@@ -9,7 +9,7 @@ import ru.nsu.fit.conveyor.node.NodeOutput
 import kotlin.random.Random
 
 @ExperimentalCoroutinesApi
-class ChooseNodeFromN(val n: Int) : BaseNode("ChooseNode") {
+open class ChooseNodeFromN(val n: Int) : BaseNode("ChooseNode") {
     private inner class ChooseNodeFromNContext : Context() {
         @Suppress("UNCHECKED_CAST")
         val outputImg: Channel<Image>
@@ -45,3 +45,5 @@ class ChooseNodeFromN(val n: Int) : BaseNode("ChooseNode") {
         const val DELAY = 1500L
     }
 }
+
+class ChooseNodeFrom2 : ChooseNodeFromN(2)

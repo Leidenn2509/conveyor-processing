@@ -13,9 +13,9 @@ import kotlin.system.measureTimeMillis
 class OneInstanceTest {
     @Test
     fun testOneInstance() = runBlocking {
-        val node1 = GaussFilter("1")
-        val node2 = GaussFilter("2")
-        val node3 = GaussFilter("3")
+        val node1 = GaussFilter()
+        val node2 = GaussFilter()
+        val node3 = GaussFilter()
 
         val flow1 = Flow("f1").apply {
             addInput(0, Image::class)

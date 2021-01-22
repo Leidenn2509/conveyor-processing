@@ -12,8 +12,8 @@ import kotlin.time.measureTime
 class NodeTest {
     @Test
     fun testWrongType(): Unit = runBlocking {
-        val node1 = ConstantNode("3")
-        val node2 = GaussFilter("1")
+        val node1 = ConstantNode()
+        val node2 = GaussFilter()
         Assertions.assertThrows(IllegalStateException::class.java) {
             node1.connectOutputTo(0, node2, 0)
         }
@@ -21,7 +21,7 @@ class NodeTest {
 
     @Test
     fun testConstantNode() = runBlocking {
-        val node = ConstantNode("3")
+        val node = ConstantNode()
         node.sendArg(0, 3)
         node.sendArg(1, 10)
         node.tryRun(this)
@@ -32,7 +32,7 @@ class NodeTest {
 
     @Test
     fun testFilterNode() = runBlocking {
-        val node = GaussFilter("1")
+        val node = GaussFilter()
         val width = 300
         val height = 300
         val type = Image.Type.PNG
@@ -52,7 +52,7 @@ class NodeTest {
 
     @Test
     fun testTwoNodes() = runBlocking {
-        val node = GaussFilter("1")
+        val node = GaussFilter()
         val node2 = ChangeTypeToJPG()
         node.connectOutputTo(0, node2, 0)
 
@@ -143,9 +143,9 @@ class NodeTest {
 
     @Test
     fun testTime() = runBlocking {
-        val node1 = GaussFilter("1")
-        val node2 = GaussFilter("2")
-        val node3 = GaussFilter("3")
+        val node1 = GaussFilter()
+        val node2 = GaussFilter()
+        val node3 = GaussFilter()
 
         node1.connectOutputTo(0, node2, 0)
         node2.connectOutputTo(0, node3, 0)

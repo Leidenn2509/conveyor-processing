@@ -7,7 +7,7 @@ import ru.nsu.fit.conveyor.node.NodeInput
 import ru.nsu.fit.conveyor.node.NodeOutput
 
 @ExperimentalCoroutinesApi
-class ConstantNode(description: String) : BaseNode(description) {
+class ConstantNode : BaseNode("Constant node") {
     private inner class ConstantNodeContext : Context() {
         @Suppress("UNCHECKED_CAST")
         val inputN: Channel<Int>
@@ -50,4 +50,6 @@ class ConstantNode(description: String) : BaseNode(description) {
     companion object {
         const val DELAY = 1000L
     }
+
+    var dummy = "lalalal"
 }
