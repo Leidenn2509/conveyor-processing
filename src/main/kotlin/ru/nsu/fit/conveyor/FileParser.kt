@@ -133,9 +133,9 @@ class FileParser() {
                 node(nodeId)?.let {
                     nodeChannels.forEach { nc ->
                             if (nc.otherNodeId != -1)
-                                node(nc.otherNodeId)?.let {
-                                    connect(nc.otherNodeId, nc.otherChannelId, nodeId, nc.channelId)
-                                } ?: error("Trying to connect to not existing node with id ${nc.otherNodeId}")
+                        node(nc.otherNodeId)?.let {
+                                connect(nc.otherNodeId, nc.otherChannelId, nodeId, nc.channelId)
+                        } ?: error("Trying to connect to not existing node with id ${nc.otherNodeId}")
                             else
                                 node(nodeId)?.let { connectFlowInput(nc.otherChannelId, it, nc.channelId) }
                     }

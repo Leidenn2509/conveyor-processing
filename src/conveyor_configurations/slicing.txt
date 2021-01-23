@@ -3,9 +3,9 @@ slicing
 0-> FLOW/0
 1-> FLOW/1
 1: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
-0: 0/0
+0-> 0/0
 FLOW
-0: 1/0
+0 -> 1/0
 FLOW_INPUT_DATA
 0: ru.nsu.fit.conveyor.commonNodes.img.Image
 1: java.lang.Integer
