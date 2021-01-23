@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import ru.nsu.fit.conveyor.baseNode.Node
 import kotlin.reflect.KClass
 
 @ExperimentalCoroutinesApi
@@ -12,7 +13,8 @@ class Flow(description: String) : BaseNode(description) {
 
     private inner class FlowContext : Context()
 
-    fun node(id: Int) = nodes[id]
+//    fun node(id: Int) = nodes[id]
+    fun node(id: Int): BaseNode? = nodes.getOrNull(id)
 
     fun <T : Any> addInput(id: Int, type: KClass<T>, withContext: Any? = null) =
         with(contexts[withContext] as FlowContext) {
@@ -46,12 +48,12 @@ class Flow(description: String) : BaseNode(description) {
         initContext(null)
     }
 
-    fun connectFlowInput(flowInputId: Int, to: BaseNode, inputToId: Int, withContext: Any? = null) =
+    fun connectFlowInput(flowInputId: Int, to: BaseNode, withContext: Any? = null) =
         with(contexts[withContext] as FlowContext) {
             inputs[flowInputId]?.let {
                 val nodeInput = to.contexts[this@Flow]!!.inputs[flowInputId]!!
                 if (it.type != nodeInput.type)
-                    error("[$description] Type of input and input don't match: ${it.type} vs ${nodeInput.type}")
+                    error("[$description] Type of flow input and node input don't match: ${it.type} vs ${nodeInput.type}")
                 nodeInput.channel = it.channel
                 it.connectedTo = to
 //            it.channel = nodeInput.channel
@@ -64,7 +66,7 @@ class Flow(description: String) : BaseNode(description) {
             outputs[flowOutputId]?.let {
                 val nodeOutput = from.contexts[this@Flow]!!.outputs[nodeOutputId]!!
                 if (it.type != nodeOutput.type)
-                    error("[$description] Type of output and output don't match: ${it.type} vs ${nodeOutput.type}")
+                    error("[$description] Type of node output and flow output don't match: ${it.type} vs ${nodeOutput.type}")
                 it.channel = nodeOutput.channel
                 it.connectedTo = from
             }

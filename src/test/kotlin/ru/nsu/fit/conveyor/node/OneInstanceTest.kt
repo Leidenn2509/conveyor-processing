@@ -28,8 +28,8 @@ class OneInstanceTest {
             connect(0, 0, 1, 0)
             connect(1, 0, 2, 0)
 
-            connectFlowInput(0, node(0), 0)
-            connectFlowOutput(0, node(2), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowOutput(0, node(2)!!, 0)
         }
 
         val flow2 = Flow("f2").apply {
@@ -43,8 +43,8 @@ class OneInstanceTest {
             connect(0, 0, 1, 0)
             connect(1, 0, 2, 0)
 
-            connectFlowInput(0, node(0), 0)
-            connectFlowOutput(0, node(2), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowOutput(0, node(2)!!, 0)
         }
 
 
@@ -106,9 +106,9 @@ class OneInstanceTest {
 
             addNode(0, slicingNode)
 
-            connectFlowInput(0, node(0), 0)
-            connectFlowInput(1, node(0), 1)
-            connectFlowOutput(0, node(0), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowInput(1, node(0)!!, 1)
+            connectFlowOutput(0, node(0)!!, 0)
         }
 
         val flow2 = Flow("2").apply {
@@ -118,9 +118,9 @@ class OneInstanceTest {
 
             addNode(0, slicingNode)
 
-            connectFlowInput(0, node(0), 0)
-            connectFlowInput(1, node(0), 1)
-            connectFlowOutput(0, node(0), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowInput(1, node(0)!!, 1)
+            connectFlowOutput(0, node(0)!!, 0)
         }
 
         flow1.sendArg(0, Image(300, 300, Image.Type.PNG))

@@ -17,8 +17,8 @@ class FlowTest {
             addInput(0, Image::class)
             addOutput(0, Image::class)
             addNode(0, GaussFilter())
-            connectFlowInput(0, node(0), 0)
-            connectFlowOutput(0, node(0), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowOutput(0, node(0)!!, 0)
         }
         val width = 300
         val height = 300
@@ -47,8 +47,8 @@ class FlowTest {
 
             connect(0, 0, 1, 0)
 
-            connectFlowInput(0, node(0), 0)
-            connectFlowOutput(0, node(1), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowOutput(0, node(1)!!, 0)
         }
         val width = 300
         val height = 300
@@ -80,9 +80,9 @@ class FlowTest {
 
             connect(0, 0, 1, 0)
 
-            connectFlowInput(0, node(0), 0)
-            connectFlowInput(1, node(0), 1)
-            connectFlowOutput(0, node(1), 0)
+            connectFlowInput(0, node(0)!!, 0)
+            connectFlowInput(1, node(0)!!, 1)
+            connectFlowOutput(0, node(1)!!, 0)
         }
         val width = 300
         val height = 300
@@ -132,9 +132,9 @@ class FlowTest {
             connect(1, 0, 2, 0)
             connect(2, 0, 3, 0)
 
-            connectFlowInput(0, node(0), 0)
+            connectFlowInput(0, node(0)!!, 0)
 //            connectFlowOutput(0, node(2), 0)
-            connectFlowOutput(0, node(3), 0)
+            connectFlowOutput(0, node(3)!!, 0)
         }
 
         repeat(5) {

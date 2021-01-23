@@ -5,6 +5,8 @@ import com.github.h0tk3y.betterParse.grammar.Grammar
 import com.github.h0tk3y.betterParse.grammar.parseToEnd
 import com.github.h0tk3y.betterParse.lexer.literalToken
 import com.github.h0tk3y.betterParse.lexer.regexToken
+import com.github.h0tk3y.betterParse.parser.MismatchedToken
+import com.github.h0tk3y.betterParse.parser.ParseException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.Flow
@@ -40,6 +42,7 @@ class FileParser() {
         val flow by literalToken(FLOW)
 
         val colon by regexToken("\\s*:\\s*")
+        val arrow by regexToken("\\s*->\\s*")
         val slash by regexToken("\\s*/\\s*")
 
         //    val point by literalToken(".?")
@@ -61,8 +64,8 @@ class FileParser() {
             id.text.toInt()
         }
 
-        val nodeChannelParser by id and colon and nodeId and slash and id map
-                { (inputChannelId, _, outputNodeId, _, outputChannelId) ->
+        val nodeChannelParser by id and skip(arrow) and nodeId and skip(slash) and id map
+                { (inputChannelId, outputNodeId, outputChannelId) ->
                     val idStr = outputNodeId.text
                     var id = -1
                     if (idStr != FLOW)
@@ -95,9 +98,13 @@ class FileParser() {
         }
 
         val flowOutputDataParser by skip(flowOutput) and skip(ws) and oneOrMore(data) map { datas ->
-            datas.forEach { data ->
-                flowOutputData.put(data.first, data.second)
-            }
+//            try {
+                datas.forEach { data ->
+                    flowOutputData.put(data.first, data.second)
+                }
+//            } catch (e : ParseException) {
+//                throw Exception("Error parsing flow output data")
+//            }
         }
 
         val flowParser by flowNameParser and skip(ws) and oneOrMore(nodeParser) and
@@ -123,16 +130,21 @@ class FileParser() {
             }
 
             flowParser.nodesInputs.forEach { (nodeId, nodeChannels) ->
-                nodeChannels.forEach { nc ->
-                    if (nc.otherNodeId != -1)
-                        connect(nc.otherNodeId, nc.otherChannelId, nodeId, nc.channelId)
-                    else
-                        connectFlowInput(nc.otherChannelId, node(nodeId), nc.channelId)
-
-                }
+                node(nodeId)?.let {
+                    nodeChannels.forEach { nc ->
+                        node(nc.otherNodeId)?.let {
+                            if (nc.otherNodeId != -1)
+                                connect(nc.otherNodeId, nc.otherChannelId, nodeId, nc.channelId)
+                            else
+                                node(nodeId)?.let { connectFlowInput(nc.otherChannelId, it, nc.channelId) }
+                        } ?: error("Trying to connect to not existing node with id ${nc.otherNodeId}")
+                    }
+                } ?: error("Trying to connect not existing node with id $nodeId")
             }
+
             flowParser.flowOutputs.forEach { nc ->
-                connectFlowOutput(nc.channelId, node(nc.otherNodeId), nc.otherChannelId)
+                node(nc.otherNodeId)?.let { connectFlowOutput(nc.channelId, it, nc.otherChannelId) }
+                    ?: error("Trying to get output from not existing node with id ${nc.otherNodeId}")
             }
         }
         return flow
