@@ -8,6 +8,7 @@ import com.github.h0tk3y.betterParse.lexer.regexToken
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import ru.nsu.fit.conveyor.node.BaseNode
 import ru.nsu.fit.conveyor.node.Flow
+import java.io.File
 
 @ExperimentalCoroutinesApi
 class FileParser() {
@@ -107,8 +108,7 @@ class FileParser() {
 
     private var flowParser = FlowParser()
 
-    fun parseFlow(expr: String): Flow {
-        flowParser.parseToEnd(expr)
+    private fun createFlow() : Flow {
         val flow = Flow(flowParser.flowName).apply {
             flowParser.flowInputData.forEach { (id, type) ->
                 addInput(id, type.kotlin)
@@ -136,6 +136,16 @@ class FileParser() {
             }
         }
         return flow
+    }
+
+    fun parseFlow(expr: String): Flow {
+        flowParser.parseToEnd(expr)
+        return createFlow()
+    }
+
+    fun parseFile(filename : String) : Flow {
+        val expr = File(filename).readText()
+        return parseFlow(expr)
     }
 }
 

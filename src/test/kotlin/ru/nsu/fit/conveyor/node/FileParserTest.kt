@@ -54,7 +54,7 @@ class FileParserTest {
 
     @Test
     fun testSimpleFlow() = runBlocking {
-        val text = """
+        /*val text = """
             simple
                 0: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
                     0: FLOW/0
@@ -64,8 +64,10 @@ class FileParserTest {
                     0: ru.nsu.fit.conveyor.commonNodes.img.Image
                 FLOW_OUTPUT_DATA
                     0: ru.nsu.fit.conveyor.commonNodes.img.Image
-        """.trimIndent()
-        val flow = parse(text)
+        """.trimIndent()*/
+        val filename = "src/conveyor_configurations/simple.txt"
+        val fileParser = FileParser()
+        val flow = fileParser.parseFile(filename)
 
         val width = 300
         val height = 300
@@ -77,17 +79,17 @@ class FileParserTest {
         flow.tryRun(this)
 
         val out = flow.receiveArg(0) as Image
-        Assertions.assertEquals(out.width, width)
-        Assertions.assertEquals(out.height, height)
-        Assertions.assertEquals(out.type, type)
-        Assertions.assertEquals(out.operations.size, 1)
-        Assertions.assertEquals(out.operations.first()::class, Gaussian::class)
+        Assertions.assertEquals(width, out.width)
+        Assertions.assertEquals(height, out.height)
+        Assertions.assertEquals(type, out.type)
+        Assertions.assertEquals(1, out.operations.size)
+        Assertions.assertEquals(Gaussian::class, out.operations.first()::class)
     }
 
     @Test
     fun testFlow() = runBlocking {
-        val text = """
-            simple
+        /*val text = """
+            base
                 0: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
                     0: FLOW/0
                 1: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
@@ -98,8 +100,10 @@ class FileParserTest {
                     0: ru.nsu.fit.conveyor.commonNodes.img.Image
                 FLOW_OUTPUT_DATA
                     0: ru.nsu.fit.conveyor.commonNodes.img.Image
-        """.trimIndent()
-        val flow = parse(text)
+        """.trimIndent()*/
+        val filename = "src/conveyor_configurations/base.txt"
+        val fileParser = FileParser()
+        val flow = fileParser.parseFile(filename)
 
         val width = 300
         val height = 300
@@ -115,8 +119,8 @@ class FileParserTest {
         Assertions.assertEquals(out.height, height)
         Assertions.assertEquals(out.type, type)
         Assertions.assertEquals(2, out.operations.size)
-        Assertions.assertEquals(out.operations.first()::class, Gaussian::class)
-        Assertions.assertEquals(out.operations.last()::class, Gaussian::class)
+        Assertions.assertEquals(Gaussian::class, out.operations.first()::class)
+        Assertions.assertEquals(Gaussian::class, out.operations.last()::class)
     }
 
     @Test
@@ -136,7 +140,10 @@ class FileParserTest {
                 FLOW_OUTPUT_DATA
                     0: ru.nsu.fit.conveyor.commonNodes.img.Image
         """.trimIndent()
-        val flow = parse(text)
+        val filename = "src/conveyor_configurations/slicing.txt"
+        val fileParser = FileParser()
+        val flow = fileParser.parseFile(filename)
+
 
         val width = 300
         val height = 300
@@ -157,19 +164,19 @@ class FileParserTest {
         Assertions.assertEquals(out.size, 2)
 
         out.forEach {
-            Assertions.assertEquals(it.width, width / 2)
-            Assertions.assertEquals(it.height, height)
-            Assertions.assertEquals(it.type, type)
-            Assertions.assertEquals(it.operations.size, 2)
-            Assertions.assertEquals(it.operations.first()::class, Slicing::class)
-            Assertions.assertEquals(it.operations.last()::class, Gaussian::class)
+            Assertions.assertEquals(width / 2, it.width)
+            Assertions.assertEquals(height, it.height)
+            Assertions.assertEquals(type, it.type)
+            Assertions.assertEquals(2, it.operations.size)
+            Assertions.assertEquals(Slicing::class, it.operations.first()::class)
+            Assertions.assertEquals(Gaussian::class, it.operations.last()::class)
         }
     }
 
     @Test
     fun testThree() = runBlocking {
-        val text = """
-            simple
+        /*val text = """
+            three
                 0: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
                     0: FLOW/0
                 1: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
@@ -185,8 +192,11 @@ class FileParserTest {
                 FLOW_OUTPUT_DATA
                     0: ru.nsu.fit.conveyor.commonNodes.img.Image
         """.trimIndent()
+*/
+        val filename = "src/conveyor_configurations/three.txt"
+        val fileParser = FileParser()
+        val flow = fileParser.parseFile(filename)
 
-        val flow = parse(text)
 
         repeat(5) {
             flow.sendArg(0, Image(300, 300, Image.Type.PNG))
@@ -207,4 +217,40 @@ class FileParserTest {
         val delay = FilterNode.DELAY
         Assertions.assertTrue(time < 10 * delay)
     }
+
+    @Test
+    fun testSimpleWithErrorsFlow() = runBlocking {
+        val text = """
+            simple
+                0: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
+                    0: FLOW/0
+                FLOW
+                    0: 0/0
+                FLOW_INPUT_DATA
+                    0: ru.nsu.fit.conveyor.commonNodes.img.Image
+                FLOW_OUTPUT_DATA
+                    0: ru.nsu.fit.conveyor.commonNodes.img.Image
+        """.trimIndent()
+//        val filename = "src/conveyor_configurations/simplewitherrors.txt"
+        val fileParser = FileParser()
+//        val flow = fileParser.parseFile(filename)
+        val flow = fileParser.parseFlow(text)
+
+        val width = 300
+        val height = 300
+        val type = Image.Type.PNG
+
+        val image = Image(width, height, type)
+        flow.sendArg(0, image)
+
+        flow.tryRun(this)
+
+        val out = flow.receiveArg(0) as Image
+        Assertions.assertEquals(width, out.width)
+        Assertions.assertEquals(height, out.height)
+        Assertions.assertEquals(type, out.type)
+        Assertions.assertEquals(1, out.operations.size)
+        Assertions.assertEquals(Gaussian::class, out.operations.first()::class)
+    }
+
 }
