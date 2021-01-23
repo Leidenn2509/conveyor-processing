@@ -42,7 +42,7 @@ class FileParser() {
         val flow by literalToken(FLOW)
 
         val colon by regexToken("\\s*:\\s*")
-        val arrow by regexToken("\\s*->\\s*")
+        val arrow by regexToken("\\s*<-\\s*")
         val slash by regexToken("\\s*/\\s*")
 
         //    val point by literalToken(".?")

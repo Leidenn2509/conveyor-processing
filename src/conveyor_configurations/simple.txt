@@ -1,8 +1,8 @@
 simple
     0: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
-        0-> FLOW/0
+        0<- FLOW/0
     FLOW
-        0-> 0/    0
+        0<- 0/    0
     FLOW_INPUT_DATA
         0: ru.nsu.fit.conveyor.commonNodes.img.Image
     FLOW_OUTPUT_DATA
