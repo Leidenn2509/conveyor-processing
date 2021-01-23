@@ -1,7 +1,7 @@
 slicing
 0: ru.nsu.fit.conveyor.commonNodes.img.SlicingNode
-0: FLOW/0
-1: FLOW/1
+0-> FLOW/0
+1-> FLOW/1
 1: ru.nsu.fit.conveyor.commonNodes.img.GaussFilter
 0: 0/0
 FLOW

@@ -48,7 +48,7 @@ class Flow(description: String) : BaseNode(description) {
         initContext(null)
     }
 
-    fun connectFlowInput(flowInputId: Int, to: BaseNode, withContext: Any? = null) =
+    fun connectFlowInput(flowInputId: Int, to: BaseNode, inputToId: Int, withContext: Any? = null) =
         with(contexts[withContext] as FlowContext) {
             inputs[flowInputId]?.let {
                 val nodeInput = to.contexts[this@Flow]!!.inputs[flowInputId]!!
